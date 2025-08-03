@@ -1,6 +1,6 @@
 import SwiftUI
 
-// 搣蛋模式枚舉
+// 搗蛋模式宣告
 enum MischievousMode: String, CaseIterable {
     case sleeping = "sleeping"
     case coffee = "coffee"
@@ -61,7 +61,7 @@ enum MischievousMode: String, CaseIterable {
         }
     }
     
-    // 背景 SF Symbols
+    // 背景 SF Symbols的圖案
     var backgroundSymbols: [String] {
         switch self {
         case .sleeping: return ["zzz", "moon.fill", "bed.double.fill", "pillow.fill"]
@@ -74,26 +74,26 @@ enum MischievousMode: String, CaseIterable {
         }
     }
     
-    // SF Symbols 的颜色主题
+    // SF Symbols 的顏色主题
     var symbolColors: [Color] {
         switch self {
-        case .sleeping: return [.blue, .purple, .indigo]
-        case .coffee: return [.brown, .orange, .yellow]
-        case .potted_plant: return [.green, .mint, .teal]
-        case .eat: return [.yellow, .orange, .red]
-        case .power_cord: return [.yellow, .red, .orange]
-        case .bit_clothes: return [.pink, .purple, .blue]
+        case .sleeping: return [.gray, .brown, .secondary]
+        case .coffee: return [.gray, .brown, .secondary]
+        case .potted_plant: return [.gray, .brown, .secondary]
+        case .eat: return [.gray, .brown, .secondary]
+        case .power_cord: return [.gray, .brown, .secondary]
+        case .bit_clothes: return [.gray, .brown, .secondary]
         case .trash_can: return [.gray, .brown, .secondary]
         }
     }
 }
 
-// 動畫類型枚舉
+// 動畫類型
 enum AnimationType {
     case breathing, shake, bounce, wiggle, shock, bite, rummage
 }
 
-// 背景动画视图
+// 背景動畫
 struct AnimatedBackgroundView: View {
     let isRunning: Bool
     let mode: MischievousMode
@@ -101,11 +101,11 @@ struct AnimatedBackgroundView: View {
     
     var body: some View {
         ZStack {
-            // 纯白色背景
+            // APP純白色背景
             Color.white
                 .ignoresSafeArea()
             
-            // 只在运行时显示动画符号
+            // 只在運行時顯示動畫符號
             if isRunning {
                 ForEach(0..<12, id: \.self) { index in
                     AnimatedSymbol(
@@ -151,7 +151,7 @@ struct AnimatedBackgroundView: View {
     }
 }
 
-// 单个动画符号
+// 單個動畫符號
 struct AnimatedSymbol: View {
     let symbol: String
     let symbolColors: [Color]
@@ -186,7 +186,7 @@ struct AnimatedSymbol: View {
     }
     
     private func setupInitialPosition() {
-        // 随机初始位置
+        // 随機初始位置
         let screenWidth = UIScreen.main.bounds.width
         let screenHeight = UIScreen.main.bounds.height
         
@@ -197,13 +197,13 @@ struct AnimatedSymbol: View {
     }
     
     private func startFloatingAnimation() {
-        // 淡入动画
+        // 淡入動畫
         withAnimation(.easeIn(duration: 0.5)) {
             opacity = 0.6
             scale = 1.0
         }
         
-        // 持续的浮动动画
+        // 持續的浮動動畫
         withAnimation(
             .linear(duration: Double.random(in: 3...6))
             .repeatForever(autoreverses: false)
@@ -232,7 +232,7 @@ struct AnimatedSymbol: View {
             opacity = Double.random(in: 0.4...0.8)
         }
         
-        // 随机改变颜色
+        // 随機改變颜色
         withAnimation(
             .easeInOut(duration: Double.random(in: 2...5))
             .repeatForever(autoreverses: false)
@@ -282,10 +282,10 @@ struct ContentView: View {
     
     var body: some View {
         ZStack {
-            // 背景动画
+            // 背景動畫
             AnimatedBackgroundView(isRunning: isRunning, mode: currentMode)
             
-            VStack(spacing: 18) {
+            VStack(spacing: 12) {
                 // 狀態按鈕 - 可以選擇搗蛋模式
                 Button {
                     isShowingModeSheet = true
@@ -300,8 +300,8 @@ struct ContentView: View {
                     Image(currentMode.customImageName)
                         .resizable()
                         .aspectRatio(contentMode: .fit)
-                        .frame(width: 240, height: 200)
-                        .padding()
+                        .frame(width: 320, height: 300)
+                        .padding(4)
                         .modifier(AnimatedCatModifier(
                             isRunning: isRunning,
                             animationType: currentMode.animationType
@@ -311,9 +311,9 @@ struct ContentView: View {
                 // 時間顯示
                 Text(timeDisplay)
                     .font(.system(size: 48, weight: .bold, design: .monospaced))
-                    .foregroundColor(isRunning ? .blue : .gray)
-                    .padding()
-                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 24))
+                    .foregroundColor(isRunning ? .blue: .gray)
+                    .padding(12)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20))
                 
                 // 新增專注任務按鈕 - 只在非運行狀態顯示
                 if !isRunning {
@@ -386,7 +386,7 @@ struct ContentView: View {
                         .frame(width: 100, height: 22)
                         .padding()
                         .background(isRunning ? .orange : .green)
-                        .cornerRadius(36)
+                        .cornerRadius(32)
                 }
                 .disabled((timeRemaining == 0 && !isRunning) || currentTask.isEmpty)
                 
@@ -539,7 +539,7 @@ struct AnimatedCatModifier: ViewModifier {
     }
 }
 
-// 搣蛋模式選擇的 Sheet 頁面
+// 搗蛋模式選擇的 Sheet 頁面
 struct MischievousModeSheet: View {
     @Binding var currentMode: MischievousMode
     let onComplete: () -> Void
@@ -629,7 +629,7 @@ struct TaskCreationSheet: View {
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 16) {
+            VStack(spacing: 20) {
                 
                 // 任務輸入區域
                 VStack(alignment: .leading, spacing: 8) {
