@@ -1,266 +1,74 @@
 import SwiftUI
 
-// 搗蛋模式宣告
-enum MischievousMode: String, CaseIterable {
-    case sleeping = "sleeping"
-    case coffee = "coffee"
-    case potted_plant = "potted_plant"
-    case eat = "eat"
-    case power_cord = "power_cord"
-    case bit_clothes = "bit_clothes"
-    case trash_can = "trash_can"
-    
-    var displayName: String {
-        switch self {
-        case .sleeping: return "休息中"
-        case .coffee: return "弄倒咖啡杯"
-        case .potted_plant: return "弄倒盆栽"
-        case .eat: return "偷吃食物"
-        case .power_cord: return "咬電線"
-        case .bit_clothes: return "咬衣服"
-        case .trash_can: return "翻垃圾"
-        }
-    }
-    
-    // 系統圖示 - 給選擇模式頁面用
-    var iconName: String {
-        switch self {
-        case .sleeping: return "cat.body"
-        case .coffee: return "cup.and.saucer.fill"
-        case .potted_plant: return "leaf.fill"
-        case .eat: return "fork.knife"
-        case .power_cord: return "bolt.fill"
-        case .bit_clothes: return "tshirt.fill"
-        case .trash_can: return "trash.fill"
-        }
-    }
-    
-    // 自訂圖片名稱 - 給主頁面用
-    var customImageName: String {
-        switch self {
-        case .sleeping: return "cat_sleeping"
-        case .coffee: return "cat_coffee"
-        case .potted_plant: return "cat_potted_plant"
-        case .eat: return "cat_eat"
-        case .power_cord: return "cat_bit_power_cord"
-        case .bit_clothes: return "cat_bit_clothes"
-        case .trash_can: return "cat_trash_can"
-        }
-    }
-    
-    // 動畫類型
-    var animationType: AnimationType {
-        switch self {
-        case .sleeping: return .breathing
-        case .coffee: return .shake
-        case .potted_plant: return .bounce
-        case .eat: return .wiggle
-        case .power_cord: return .shock
-        case .bit_clothes: return .bite
-        case .trash_can: return .rummage
-        }
-    }
-    
-    // 背景 SF Symbols的圖案
-    var backgroundSymbols: [String] {
-        switch self {
-        case .sleeping: return ["zzz", "moon.fill", "bed.double.fill", "pillow.fill"]
-        case .coffee: return ["cup.and.saucer.fill", "drop.fill", "exclamationmark.triangle.fill", "flame.fill"]
-        case .potted_plant: return ["leaf.fill", "tree.fill", "ladybug.fill", "sun.max.fill"]
-        case .eat: return ["fork.knife", "fish.fill", "heart.eyes.fill", "mouth.fill"]
-        case .power_cord: return ["bolt.fill", "exclamationmark.triangle.fill", "spark.fill", "eye.trianglebadge.exclamationmark.fill"]
-        case .bit_clothes: return ["tshirt.fill", "scissors", "heart.fill", "pawprint.fill"]
-        case .trash_can: return ["trash.fill", "bag.fill", "face.smiling.inverse", "questionmark.folder.fill"]
-        }
-    }
-    
-    // SF Symbols 的顏色主题
-    var symbolColors: [Color] {
-        switch self {
-        case .sleeping: return [.gray, .brown, .secondary]
-        case .coffee: return [.gray, .brown, .secondary]
-        case .potted_plant: return [.gray, .brown, .secondary]
-        case .eat: return [.gray, .brown, .secondary]
-        case .power_cord: return [.gray, .brown, .secondary]
-        case .bit_clothes: return [.gray, .brown, .secondary]
-        case .trash_can: return [.gray, .brown, .secondary]
-        }
-    }
-}
-
-// 動畫類型
+// 動畫類型（僅保留簡單動畫用於貓咪圖片）
 enum AnimationType {
     case breathing, shake, bounce, wiggle, shock, bite, rummage
 }
 
-// 背景動畫
-struct AnimatedBackgroundView: View {
+// 貓咪動畫 Modifier（僅保留簡單動畫）
+struct AnimatedCatModifier: ViewModifier {
     let isRunning: Bool
-    let mode: MischievousMode
-    @State private var animationStates: [Bool] = []
+    @State private var animationState = false
     
-    var body: some View {
-        ZStack {
-            // APP純白色背景
-            Color.white
-                .ignoresSafeArea()
-            
-            // 只在運行時顯示動畫符號
-            if isRunning {
-                ForEach(0..<12, id: \.self) { index in
-                    AnimatedSymbol(
-                        symbol: mode.backgroundSymbols[index % mode.backgroundSymbols.count],
-                        symbolColors: mode.symbolColors,
-                        index: index,
-                        isAnimating: animationStates.count > index ? animationStates[index] : false
-                    )
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(isRunning && animationState ? 1.05 : 1.0)
+            .animation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true), value: animationState)
+            .onAppear {
+                if isRunning {
+                    animationState = true
                 }
             }
-        }
-        .onAppear {
-            initializeAnimationStates()
-        }
-        .onChange(of: isRunning) { running in
-            if running {
-                startAnimation()
-            } else {
-                stopAnimation()
+            .onChange(of: isRunning) { running, _ in
+                animationState = running
             }
-        }
-        .onChange(of: mode) { _ in
-            initializeAnimationStates()
-        }
-    }
-    
-    private func initializeAnimationStates() {
-        animationStates = Array(repeating: false, count: 12)
-    }
-    
-    private func startAnimation() {
-        for i in 0..<animationStates.count {
-            DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 0.2) {
-                if i < animationStates.count {
-                    animationStates[i] = true
-                }
-            }
-        }
-    }
-    
-    private func stopAnimation() {
-        animationStates = Array(repeating: false, count: 12)
     }
 }
 
-// 單個動畫符號
-struct AnimatedSymbol: View {
-    let symbol: String
-    let symbolColors: [Color]
-    let index: Int
-    let isAnimating: Bool
+// 專注紀錄資料結構
+struct FocusRecord: Identifiable, Codable, Equatable {
+    var id: UUID = UUID()
+    let date: String // yyyy/MM/dd
+    let taskName: String
+    let duration: Int // 秒
+    let isCompleted: Bool
     
-    @State private var position: CGPoint = .zero
-    @State private var rotation: Double = 0
-    @State private var scale: Double = 0.5
-    @State private var opacity: Double = 0
-    @State private var colorIndex: Int = 0
-    
-    var body: some View {
-        Image(systemName: symbol)
-            .font(.system(size: 20 + Double(index % 3) * 10, weight: .medium))
-            .foregroundColor(symbolColors[colorIndex % symbolColors.count])
-            .scaleEffect(scale)
-            .rotationEffect(.degrees(rotation))
-            .opacity(opacity)
-            .position(position)
-            .onAppear {
-                setupInitialPosition()
-                colorIndex = Int.random(in: 0..<symbolColors.count)
-            }
-            .onChange(of: isAnimating) { animating in
-                if animating {
-                    startFloatingAnimation()
-                } else {
-                    resetAnimation()
-                }
-            }
-    }
-    
-    private func setupInitialPosition() {
-        // 随機初始位置
-        let screenWidth = UIScreen.main.bounds.width
-        let screenHeight = UIScreen.main.bounds.height
-        
-        position = CGPoint(
-            x: CGFloat.random(in: 40...(screenWidth - 40)),
-            y: CGFloat.random(in: 100...(screenHeight - 200))
-        )
-    }
-    
-    private func startFloatingAnimation() {
-        // 淡入動畫
-        withAnimation(.easeIn(duration: 0.5)) {
-            opacity = 0.6
-            scale = 1.0
-        }
-        
-        // 持續的浮動動畫
-        withAnimation(
-            .linear(duration: Double.random(in: 3...6))
-            .repeatForever(autoreverses: false)
-        ) {
-            rotation = 360
-        }
-        
-        withAnimation(
-            .easeInOut(duration: Double.random(in: 2...4))
-            .repeatForever(autoreverses: true)
-        ) {
-            let screenWidth = UIScreen.main.bounds.width
-            let screenHeight = UIScreen.main.bounds.height
-            
-            position = CGPoint(
-                x: CGFloat.random(in: 40...(screenWidth - 40)),
-                y: CGFloat.random(in: 100...(screenHeight - 200))
-            )
-            scale = Double.random(in: 0.8...1.5)
-        }
-        
-        withAnimation(
-            .easeInOut(duration: Double.random(in: 1...3))
-            .repeatForever(autoreverses: true)
-        ) {
-            opacity = Double.random(in: 0.4...0.8)
-        }
-        
-        // 随機改變颜色
-        withAnimation(
-            .easeInOut(duration: Double.random(in: 2...5))
-            .repeatForever(autoreverses: false)
-        ) {
-            colorIndex = (colorIndex + 1) % symbolColors.count
-        }
-    }
-    
-    private func resetAnimation() {
-        withAnimation(.easeOut(duration: 0.3)) {
-            opacity = 0
-            scale = 0.5
-        }
+    enum CodingKeys: String, CodingKey {
+        case id, date, taskName, duration, isCompleted
     }
 }
 
 struct ContentView: View {
     @State private var isRunning = false
     @State private var isShowingTaskSheet = false
-    @State private var isShowingModeSheet = false
+    @State private var isShowingRecordSheet = false
+    @State private var isShowingStatsSheet = false
     @State private var selectedHour = 0
     @State private var selectedMinute = 25
     @State private var selectedSecond = 0
     @State private var timeRemaining = 0000
     @State private var timer: Timer?
     @State private var currentTask = ""
-    @State private var currentMode: MischievousMode = .sleeping
-    @State private var isAnimating = false
+    // 新增：今日已完成任務清單
+    @State private var completedTasksToday: [String] = []
+    @State private var todayString: String = ContentView.getTodayString()
+    @State private var focusRecords: [FocusRecord] = []
+    
+    // 日期字串取得
+    static func getTodayString() -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy/MM/dd"
+        return formatter.string(from: Date())
+    }
+    
+    // 每次進入畫面時檢查日期，若不是今日則清空清單
+    func checkAndResetIfNewDay() {
+        let now = ContentView.getTodayString()
+        if now != todayString {
+            todayString = now
+            completedTasksToday = []
+        }
+    }
     
     // 計算顯示時間的格式化字串
     var timeDisplay: String {
@@ -282,29 +90,83 @@ struct ContentView: View {
     
     var body: some View {
         ZStack {
-            // 背景動畫
-            AnimatedBackgroundView(isRunning: isRunning, mode: currentMode)
+            // APP純白色背景
+            Color.white.ignoresSafeArea()
             
             VStack(spacing: 12) {
-                // 狀態按鈕 - 可以選擇搗蛋模式
-                Button {
-                    isShowingModeSheet = true
-                } label: {
-                    Text("狀態：\(currentMode.displayName) > ")
-                        .font(.system(size: 24, weight: .bold, design: .default))
-                        .foregroundColor(.blue)
+                // 新增：專注紀錄按鈕（移到最上方）
+                HStack {
+                    Spacer()
+                    Button(action: { isShowingRecordSheet = true }) {
+                        Text("專注紀錄")
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(.black)
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 10)
+                    }
+                    .background(
+                        Capsule()
+                            .fill(Color(hex: "#e0e0e0")) // 淺灰色
+                    )
+                    .buttonStyle(PlainButtonStyle())
+                    .overlay(
+                        Capsule()
+                            .stroke(Color(hex: "#e0e0e0"), lineWidth: 1)
+                    )
+                    .contentShape(Capsule())
+                    .padding(.top, 8)
+                    .padding(.bottom, 4)
+                    .buttonStyle(
+                        ButtonStyleWithHighlight(
+                            normalBackground: Color(hex: "#e0e0e0"),
+                            highlightedBackground: Color(hex: "#e0e0e0").opacity(0.85),
+                            normalForeground: .black,
+                            highlightedForeground: .black,
+                            cornerRadius: 8
+                        )
+                    )
+                    
+                    // 新增：統計紀錄按鈕
+                    Button(action: { isShowingStatsSheet = true }) {
+                        Text("統計紀錄")
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(.black)
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 10)
+                    }
+                    .background(
+                        Capsule()
+                            .fill(Color(hex: "#e0e0e0")) // 淺灰色
+                    )
+                    .buttonStyle(PlainButtonStyle())
+                    .overlay(
+                        Capsule()
+                            .stroke(Color(hex: "#e0e0e0"), lineWidth: 1)
+                    )
+                    .contentShape(Capsule())
+                    .padding(.top, 8)
+                    .padding(.bottom, 4)
+                    .buttonStyle(
+                        ButtonStyleWithHighlight(
+                            normalBackground: Color(hex: "#e0e0e0"),
+                            highlightedBackground: Color(hex: "#e0e0e0").opacity(0.85),
+                            normalForeground: .black,
+                            highlightedForeground: .black,
+                            cornerRadius: 8
+                        )
+                    )
+                    Spacer()
                 }
                 
-                // 貓咪圖片 - 根據選擇的模式顯示自訂圖片
+                // 貓咪圖片 - 改為固定圖片
                 VStack {
-                    Image(currentMode.customImageName)
+                    Image("cat_sleeping")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 320, height: 300)
                         .padding(4)
                         .modifier(AnimatedCatModifier(
-                            isRunning: isRunning,
-                            animationType: currentMode.animationType
+                            isRunning: isRunning
                         ))
                 }
                 
@@ -372,37 +234,109 @@ struct ContentView: View {
                         .padding()
                 }
                 
-                // 開始/暫停按鈕 - 永遠顯示
-                Button(action: {
+                // 開始/暫停與取消按鈕 - 永遠顯示
+                HStack(spacing: 16) {
+                    Button(action: {
+                        if isRunning {
+                            pauseTimer()
+                        } else {
+                            startTimer()
+                        }
+                    }) {
+                        Text(isRunning ? "暫停" : "開始")
+                            .font(.title3)
+                            .foregroundColor(.white)
+                            .frame(width: 80, height: 22)
+                            .padding()
+                            .background(isRunning ? .orange : .green)
+                            .cornerRadius(32)
+                    }
+                    .disabled((timeRemaining == 0 && !isRunning) || currentTask.isEmpty)
+                    
+                    // 新增：取消按鈕（僅在運行時顯示）
                     if isRunning {
-                        pauseTimer()
-                    } else {
-                        startTimer()
+                        Button(action: {
+                            // 新增未完成紀錄
+                            if !currentTask.isEmpty && timeRemaining > 0 {
+                                focusRecords.append(FocusRecord(
+                                    date: todayString,
+                                    taskName: currentTask,
+                                    duration: totalTime - timeRemaining,
+                                    isCompleted: false
+                                ))
+                            }
+                            pauseTimer()
+                            currentTask = ""
+                            timeRemaining = 0
+                            selectedHour = 0
+                            selectedMinute = 25
+                            selectedSecond = 0
+                        }) {
+                            Text("取消")
+                                .font(.title3)
+                                .foregroundColor(.white)
+                                .frame(width: 80, height: 22)
+                                .padding()
+                                .background(Color.red)
+                                .cornerRadius(32)
+                        }
                     }
-                }) {
-                    Text(isRunning ? "暫停" : "開始")
-                        .font(.title)
-                        .foregroundColor(.white)
-                        .frame(width: 100, height: 22)
-                        .padding()
-                        .background(isRunning ? .orange : .green)
-                        .cornerRadius(32)
                 }
-                .disabled((timeRemaining == 0 && !isRunning) || currentTask.isEmpty)
                 
-                // 重置按鈕 - 只在有任務時顯示
+                // 重置任務與清除項目按鈕 - 只在有任務時顯示
                 if !currentTask.isEmpty {
-                    Button("重置") {
-                        resetTimer()
+                    HStack(spacing: 16) {
+                        Button("重置任務") {
+                            resetTimer()
+                            startTimer() // 立即重新開始計時
+                        }
+                        .foregroundColor(.orange)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 8)
+                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+                        
+                        Button("清除項目") {
+                            pauseTimer()
+                            currentTask = ""
+                            timeRemaining = 0
+                            selectedHour = 0
+                            selectedMinute = 25
+                            selectedSecond = 0
+                        }
+                        .foregroundColor(.red)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 8)
+                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
                     }
-                    .foregroundColor(.red)
                     .padding(.top, 10)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 8)
-                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
                 }
             }
             .padding()
+            // 新增：下方顯示今日完成任務清單
+            VStack {
+                Spacer()
+                if !completedTasksToday.isEmpty {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Divider()
+                        Text("今日已完成專注項目：")
+                            .font(.headline)
+                            .foregroundColor(.secondary)
+                        ForEach(completedTasksToday, id: \.self) { task in
+                            HStack {
+                                Text(task)
+                                    .font(.subheadline)
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundColor(.green)
+                            }
+                        }
+                    }
+                    .padding(.horizontal)
+                    .padding(.bottom, 8)
+                }
+            }
+        }
+        .sheet(isPresented: $isShowingRecordSheet) {
+            FocusRecordView(focusRecords: focusRecords)
         }
         .sheet(isPresented: $isShowingTaskSheet) {
             TaskCreationSheet(
@@ -413,16 +347,24 @@ struct ContentView: View {
                 onComplete: {
                     timeRemaining = totalTime
                     isShowingTaskSheet = false
-                }
+                },
+                onTaskCompleted: { taskName in
+                    // 避免重複加入
+                    if !taskName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !completedTasksToday.contains(taskName) {
+                        completedTasksToday.append(taskName)
+                    }
+                },
+                focusRecords: focusRecords // 修正這裡，傳遞 focusRecords 參數
             )
         }
-        .sheet(isPresented: $isShowingModeSheet) {
-            MischievousModeSheet(
-                currentMode: $currentMode,
-                onComplete: {
-                    isShowingModeSheet = false
-                }
-            )
+        .sheet(isPresented: $isShowingStatsSheet) {
+            FocusStatsView(focusRecords: focusRecords)
+        }
+        .onAppear {
+            checkAndResetIfNewDay()
+        }
+        .onChange(of: todayString) { _, _ in
+            checkAndResetIfNewDay()
         }
         .onDisappear {
             timer?.invalidate()
@@ -432,13 +374,21 @@ struct ContentView: View {
     // 開始計時器
     func startTimer() {
         guard timeRemaining > 0 else { return }
-        
         isRunning = true
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
             if timeRemaining > 0 {
                 timeRemaining -= 1
             } else {
                 // 時間到了
+                // 新增已完成紀錄
+                if !currentTask.isEmpty {
+                    focusRecords.append(FocusRecord(
+                        date: todayString,
+                        taskName: currentTask,
+                        duration: totalTime,
+                        isCompleted: true
+                    ))
+                }
                 pauseTimer()
                 // 這裡可以加入通知或音效
             }
@@ -459,163 +409,6 @@ struct ContentView: View {
     }
 }
 
-// 貓咪動畫 Modifier
-struct AnimatedCatModifier: ViewModifier {
-    let isRunning: Bool
-    let animationType: AnimationType
-    @State private var animationState = false
-    
-    func body(content: Content) -> some View {
-        content
-            .scaleEffect(scaleEffect)
-            .rotationEffect(rotationEffect)
-            .offset(offsetEffect)
-            .opacity(opacityEffect)
-            .animation(animationStyle, value: animationState)
-            .onAppear {
-                if isRunning {
-                    animationState = true
-                }
-            }
-            .onChange(of: isRunning) { running in
-                animationState = running
-            }
-    }
-    
-    private var scaleEffect: CGFloat {
-        guard isRunning && animationState else { return 1.0 }
-        switch animationType {
-        case .breathing: return 1.05
-        case .bounce: return 1.1
-        case .shock: return 1.08
-        default: return 1.0
-        }
-    }
-    
-    private var rotationEffect: Angle {
-        guard isRunning && animationState else { return .degrees(0) }
-        switch animationType {
-        case .shake: return .degrees(8)
-        case .wiggle: return .degrees(5)
-        case .bite: return .degrees(10)
-        case .rummage: return .degrees(6)
-        default: return .degrees(0)
-        }
-    }
-    
-    private var offsetEffect: CGSize {
-        guard isRunning && animationState else { return .zero }
-        switch animationType {
-        case .shake: return CGSize(width: 3, height: 0)
-        case .rummage: return CGSize(width: 2, height: 2)
-        case .shock: return CGSize(width: 1, height: 1)
-        default: return .zero
-        }
-    }
-    
-    private var opacityEffect: Double {
-        guard isRunning else { return 1.0 }
-        switch animationType {
-        case .shock: return animationState ? 0.8 : 1.0
-        default: return 1.0
-        }
-    }
-    
-    private var animationStyle: Animation {
-        switch animationType {
-        case .breathing:
-            return .easeInOut(duration: 2.0).repeatForever(autoreverses: true)
-        case .shake, .wiggle:
-            return .easeInOut(duration: 0.4).repeatForever(autoreverses: true)
-        case .bounce:
-            return .easeOut(duration: 0.8).repeatForever(autoreverses: true)
-        case .bite:
-            return .linear(duration: 0.3).repeatForever(autoreverses: true)
-        case .shock:
-            return .easeInOut(duration: 0.2).repeatForever(autoreverses: true)
-        case .rummage:
-            return .easeInOut(duration: 0.6).repeatForever(autoreverses: true)
-        }
-    }
-}
-
-// 搗蛋模式選擇的 Sheet 頁面
-struct MischievousModeSheet: View {
-    @Binding var currentMode: MischievousMode
-    let onComplete: () -> Void
-    
-    let columns = [
-        GridItem(.flexible()),
-        GridItem(.flexible())
-    ]
-    
-    var body: some View {
-        NavigationView {
-            VStack(spacing: 20) {
-                Text("選擇搗蛋模式💀")
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .padding(.top)
-                
-                Text("選擇貓咪的搗蛋行為")
-                    .font(.headline)
-                    .foregroundColor(.secondary)
-                    .padding(.bottom)
-                
-                LazyVGrid(columns: columns, spacing: 20) {
-                    ForEach(MischievousMode.allCases.dropFirst(), id: \.self) { mode in
-                        Button {
-                            currentMode = mode
-                        } label: {
-                            VStack(spacing: 12) {
-                                Image(systemName: mode.iconName)
-                                    .font(.system(size: 40))
-                                    .foregroundColor(currentMode == mode ? .white : .primary)
-                                
-                                Text(mode.displayName)
-                                    .font(.system(size: 14, weight: .medium))
-                                    .foregroundColor(currentMode == mode ? .white : .primary)
-                                    .multilineTextAlignment(.center)
-                            }
-                            .frame(width: 120, height: 100)
-                            .background(
-                                RoundedRectangle(cornerRadius: 15)
-                                    .fill(currentMode == mode ? Color.blue : Color.gray.opacity(0.1))
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 15)
-                                    .stroke(currentMode == mode ? Color.blue : Color.gray.opacity(0.3), lineWidth: 2)
-                            )
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                    }
-                }
-                .padding(.horizontal)
-                
-                Spacer()
-            }
-            .navigationTitle("")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("取消") {
-                        onComplete()
-                    }
-                }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("完成") {
-                        onComplete()
-                    }
-                    .fontWeight(.bold)
-                }
-            }
-        }
-        .presentationDetents([.medium, .large])
-        .presentationDragIndicator(.visible)
-    }
-}
-
 // 任務創建的 Sheet 頁面
 struct TaskCreationSheet: View {
     @Binding var selectedHour: Int
@@ -623,9 +416,21 @@ struct TaskCreationSheet: View {
     @Binding var selectedSecond: Int
     @Binding var currentTask: String
     let onComplete: () -> Void
+    // 新增：完成任務時回傳 closure
+    var onTaskCompleted: ((String) -> Void)? = nil
+    // 新增：接收 focusRecords 參數
+    let focusRecords: [FocusRecord]
     
     @State private var taskInput = ""
     @FocusState private var isTextFieldFocused: Bool
+    @State private var isTaskCompleted = false
+    
+    // 日期格式化
+    private var todayString: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy/MM/dd"
+        return formatter.string(from: Date())
+    }
     
     var body: some View {
         NavigationView {
@@ -769,11 +574,13 @@ struct TaskCreationSheet: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("完成") {
                         // 更新任務名稱
-                        if !taskInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                            currentTask = taskInput.trimmingCharacters(in: .whitespacesAndNewlines)
+                        let trimmed = taskInput.trimmingCharacters(in: .whitespacesAndNewlines)
+                        if !trimmed.isEmpty {
+                            currentTask = trimmed
                         } else {
                             currentTask = "專注任務"
                         }
+                        // 不再於此新增紀錄，僅設定任務與時間
                         onComplete()
                     }
                     .fontWeight(.bold)
@@ -790,6 +597,228 @@ struct TaskCreationSheet: View {
         }
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
+    }
+}
+
+// 專注紀錄檢視
+struct FocusRecordView: View {
+    let focusRecords: [FocusRecord]
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationView {
+            ScrollView {
+                VStack(spacing: 16) {
+                    if focusRecords.isEmpty {
+                        VStack(spacing: 16) {
+                            Image(systemName: "clock.badge.questionmark")
+                                .font(.system(size: 48))
+                                .foregroundColor(.secondary)
+                            Text("尚無專注紀錄")
+                                .font(.headline)
+                                .foregroundColor(.secondary)
+                            Text("完成專注任務後，紀錄會顯示在這裡")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                        }
+                        .padding(.top, 100)
+                    } else {
+                        ForEach(focusRecords) { record in
+                            HStack {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(record.taskName)
+                                        .font(.system(size: 20, weight: .bold))
+                                        .foregroundColor(.white)
+                                    Text("時長：\(formatDuration(record.duration))")
+                                        .font(.subheadline)
+                                        .foregroundColor(.white.opacity(0.85))
+                                    Text("日期：\(record.date)")
+                                        .font(.subheadline)
+                                        .foregroundColor(.white.opacity(0.85))
+                                }
+                                Spacer()
+                                Image(systemName: record.isCompleted ? "checkmark" : "xmark")
+                                    .font(.system(size: 28, weight: .bold))
+                                    .foregroundColor(.white)
+                            }
+                            .padding(.horizontal, 18)
+                            .padding(.vertical, 16)
+                            .background(record.isCompleted ? Color.green : Color(hex: "#cc5a33"))
+                            .cornerRadius(20)
+                        }
+                    }
+                }
+                .padding(.top, 24)
+                .padding(.horizontal, 16)
+            }
+            .background(Color.white) // 將底圖設為白色
+            .navigationTitle("專注紀錄")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("完成") {
+                        dismiss()
+                    }
+                    .fontWeight(.bold)
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+    }
+    
+    // 格式化時間顯示
+    private func formatDuration(_ seconds: Int) -> String {
+        let hours = seconds / 3600
+        let minutes = (seconds % 3600) / 60
+        let secs = seconds % 60
+        
+        if hours > 0 {
+            return String(format: "%d小時%d分鐘%d秒", hours, minutes, secs)
+        } else if minutes > 0 {
+            return String(format: "%d分鐘%d秒", minutes, secs)
+        } else {
+            return String(format: "%d秒", secs)
+        }
+    }
+}
+
+// 新增 FocusStatsView
+struct FocusStatsView: View {
+    let focusRecords: [FocusRecord]
+    @Environment(\.dismiss) private var dismiss
+    
+    // 分組統計資料
+    var groupedStats: [(date: String, completed: Int, uncompleted: Int, totalDuration: Int)] {
+        let grouped = Dictionary(grouping: focusRecords) { $0.date }
+        return grouped.keys.sorted(by: >).map { date in
+            let records = grouped[date] ?? []
+            let completed = records.filter { $0.isCompleted }.count
+            let uncompleted = records.filter { !$0.isCompleted }.count
+            let totalDuration = records.reduce(0) { $0 + $1.duration }
+            return (date, completed, uncompleted, totalDuration)
+        }
+    }
+    
+    var body: some View {
+        NavigationView {
+            ScrollView {
+                VStack(spacing: 18) {
+                    if groupedStats.isEmpty {
+                        VStack(spacing: 16) {
+                            Image(systemName: "chart.bar.xaxis")
+                                .font(.system(size: 48))
+                                .foregroundColor(.secondary)
+                            Text("尚無統計紀錄")
+                                .font(.headline)
+                                .foregroundColor(.secondary)
+                            Text("完成專注任務後，統計會顯示在這裡")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                        }
+                        .padding(.top, 100)
+                    } else {
+                        ForEach(groupedStats, id: \.date) { stat in
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text(stat.date)
+                                    .font(.title2)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(.primary)
+                                HStack {
+                                    Label("完成：\(stat.completed) 項", systemImage: "checkmark.circle.fill")
+                                        .foregroundColor(.green)
+                                    Label("未完成：\(stat.uncompleted) 項", systemImage: "xmark.circle.fill")
+                                        .foregroundColor(.red)
+                                }
+                                Text("總專注時間：\(formatDuration(stat.totalDuration))")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                            }
+                            .padding(18)
+                            .background(Color.white)
+                            .cornerRadius(18)
+                            .shadow(color: Color.black.opacity(0.04), radius: 2, x: 0, y: 2)
+                        }
+                    }
+                }
+                .padding(.top, 24)
+                .padding(.horizontal, 16)
+            }
+            .background(Color(.systemGroupedBackground))
+            .navigationTitle("統計紀錄")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("完成") {
+                        dismiss()
+                    }
+                    .fontWeight(.bold)
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+    }
+    
+    // 格式化時間顯示
+    private func formatDuration(_ seconds: Int) -> String {
+        let hours = seconds / 3600
+        let minutes = (seconds % 3600) / 60
+        let secs = seconds % 60
+        if hours > 0 {
+            return String(format: "%d小時%d分鐘%d秒", hours, minutes, secs)
+        } else if minutes > 0 {
+            return String(format: "%d分鐘%d秒", minutes, secs)
+        } else {
+            return String(format: "%d秒", secs)
+        }
+    }
+}
+
+// 新增自訂 ButtonStyle
+struct ButtonStyleWithHighlight: ButtonStyle {
+    var normalBackground: Color
+    var highlightedBackground: Color
+    var normalForeground: Color
+    var highlightedForeground: Color
+    var cornerRadius: CGFloat = 8
+    
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .foregroundColor(configuration.isPressed ? highlightedForeground : normalForeground)
+            .background(
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .fill(configuration.isPressed ? highlightedBackground : normalBackground)
+            )
+    }
+}
+
+// 新增 Color 擴充，支援 hex 初始化
+extension Color {
+    init(hex: String) {
+        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        Scanner(string: hex).scanHexInt64(&int)
+        let a, r, g, b: UInt64
+        switch hex.count {
+        case 3: // RGB (12-bit)
+            (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
+        case 6: // RGB (24-bit)
+            (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
+        case 8: // ARGB (32-bit)
+            (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
+        default:
+            (a, r, g, b) = (255, 0, 0, 0)
+        }
+        self.init(
+            .sRGB,
+            red: Double(r) / 255,
+            green: Double(g) / 255,
+            blue: Double(b) / 255,
+            opacity: Double(a) / 255
+        )
     }
 }
 
