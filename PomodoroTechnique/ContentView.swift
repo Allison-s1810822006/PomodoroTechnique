@@ -53,6 +53,7 @@ struct ContentView: View {
     @State private var completedTasksToday: [String] = []
     @State private var todayString: String = ContentView.getTodayString()
     @State private var focusRecords: [FocusRecord] = []
+    @State private var showCancelAlert = false
     
     // 日期字串取得
     static func getTodayString() -> String {
@@ -100,63 +101,69 @@ struct ContentView: View {
                     Button(action: { isShowingRecordSheet = true }) {
                         Text("專注紀錄")
                             .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(.black)
+                            .foregroundColor(.white)
                             .padding(.horizontal, 24)
                             .padding(.vertical, 10)
                     }
                     .background(
                         Capsule()
-                            .fill(Color(hex: "#e0e0e0")) // 淺灰色
+                            .fill(Color(hex: "#558859")) // 深綠色
                     )
                     .buttonStyle(PlainButtonStyle())
                     .overlay(
                         Capsule()
-                            .stroke(Color(hex: "#e0e0e0"), lineWidth: 1)
+                            .stroke(Color(hex: "#558859"), lineWidth: 1)
                     )
                     .contentShape(Capsule())
                     .padding(.top, 8)
                     .padding(.bottom, 4)
                     .buttonStyle(
                         ButtonStyleWithHighlight(
-                            normalBackground: Color(hex: "#e0e0e0"),
-                            highlightedBackground: Color(hex: "#e0e0e0").opacity(0.85),
-                            normalForeground: .black,
-                            highlightedForeground: .black,
+                            normalBackground: Color(hex: "#558859"),
+                            highlightedBackground: Color(hex: "#558859").opacity(0.85),
+                            normalForeground: .white,
+                            highlightedForeground: .white,
                             cornerRadius: 8
                         )
                     )
                     
-                    // 新增：統計紀錄按鈕
+                    // 統計紀錄按鈕
                     Button(action: { isShowingStatsSheet = true }) {
                         Text("統計紀錄")
                             .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(.black)
+                            .foregroundColor(.white)
                             .padding(.horizontal, 24)
                             .padding(.vertical, 10)
                     }
                     .background(
                         Capsule()
-                            .fill(Color(hex: "#e0e0e0")) // 淺灰色
+                            .fill(Color(hex: "#558859")) // 深綠色
                     )
                     .buttonStyle(PlainButtonStyle())
                     .overlay(
                         Capsule()
-                            .stroke(Color(hex: "#e0e0e0"), lineWidth: 1)
+                            .stroke(Color(hex: "#558859"), lineWidth: 1)
                     )
                     .contentShape(Capsule())
                     .padding(.top, 8)
                     .padding(.bottom, 4)
                     .buttonStyle(
                         ButtonStyleWithHighlight(
-                            normalBackground: Color(hex: "#e0e0e0"),
-                            highlightedBackground: Color(hex: "#e0e0e0").opacity(0.85),
-                            normalForeground: .black,
-                            highlightedForeground: .black,
+                            normalBackground: Color(hex: "#558859"),
+                            highlightedBackground: Color(hex: "#558859").opacity(0.85),
+                            normalForeground: .white,
+                            highlightedForeground: .white,
                             cornerRadius: 8
                         )
                     )
                     Spacer()
                 }
+                // 新增提示文字
+                Text("請專注項目任務，才能讓小貓睡飽不起床搗蛋！")
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.bottom, 2)
                 
                 // 貓咪圖片 - 改為固定圖片
                 VStack {
@@ -173,7 +180,7 @@ struct ContentView: View {
                 // 時間顯示
                 Text(timeDisplay)
                     .font(.system(size: 48, weight: .bold, design: .monospaced))
-                    .foregroundColor(isRunning ? .blue: .gray)
+                    .foregroundColor(isRunning ? Color(hex: "#558859") : .gray)
                     .padding(12)
                     .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20))
                 
@@ -184,12 +191,12 @@ struct ContentView: View {
                     } label: {
                         Text("新增專注任務")
                             .font(.system(size: 18, weight: .medium))
-                            .foregroundColor(.blue)
+                            .foregroundColor(Color(hex: "#558859"))
                             .padding(.horizontal, 20)
                             .padding(.vertical, 10)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 20)
-                                    .stroke(Color.blue, lineWidth: 1)
+                                    .stroke(Color(hex: "#558859"), lineWidth: 1)
                             )
                     }
                 }
@@ -246,39 +253,30 @@ struct ContentView: View {
                         Text(isRunning ? "暫停" : "開始")
                             .font(.title3)
                             .foregroundColor(.white)
-                            .frame(width: 80, height: 22)
-                            .padding()
-                            .background(isRunning ? .orange : .green)
-                            .cornerRadius(32)
+                            .frame(minWidth: 0, maxWidth: .infinity)
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 10)
+                            .background(
+                                Capsule()
+                                    .fill(isRunning ? Color(hex: "#558859") : Color(hex: "#2a2a2a"))
+                            )
                     }
                     .disabled((timeRemaining == 0 && !isRunning) || currentTask.isEmpty)
                     
-                    // 新增：取消按鈕（僅在運行時顯示）
                     if isRunning {
                         Button(action: {
-                            // 新增未完成紀錄
-                            if !currentTask.isEmpty && timeRemaining > 0 {
-                                focusRecords.append(FocusRecord(
-                                    date: todayString,
-                                    taskName: currentTask,
-                                    duration: totalTime - timeRemaining,
-                                    isCompleted: false
-                                ))
-                            }
-                            pauseTimer()
-                            currentTask = ""
-                            timeRemaining = 0
-                            selectedHour = 0
-                            selectedMinute = 25
-                            selectedSecond = 0
+                            showCancelAlert = true
                         }) {
                             Text("取消")
                                 .font(.title3)
                                 .foregroundColor(.white)
-                                .frame(width: 80, height: 22)
-                                .padding()
-                                .background(Color.red)
-                                .cornerRadius(32)
+                                .frame(minWidth: 0, maxWidth: .infinity)
+                                .padding(.horizontal, 24)
+                                .padding(.vertical, 10)
+                                .background(
+                                    Capsule()
+                                        .fill(Color.red)
+                                )
                         }
                     }
                 }
@@ -369,6 +367,14 @@ struct ContentView: View {
         .onDisappear {
             timer?.invalidate()
         }
+        .alert("確定要取消當前專注項目嗎？", isPresented: $showCancelAlert) {
+            Button("確定", role: .destructive) {
+                handleCancelTask()
+            }
+            Button("取消", role: .cancel) {}
+        } message: {
+            Text("小貓睡不飽會起床搗蛋！")
+        }
     }
     
     // 開始計時器
@@ -406,6 +412,24 @@ struct ContentView: View {
     func resetTimer() {
         pauseTimer()
         timeRemaining = totalTime
+    }
+    
+    // 新增：取消任務的邏輯
+    func handleCancelTask() {
+        if !currentTask.isEmpty && timeRemaining > 0 {
+            focusRecords.append(FocusRecord(
+                date: todayString,
+                taskName: currentTask,
+                duration: totalTime - timeRemaining,
+                isCompleted: false
+            ))
+        }
+        pauseTimer()
+        currentTask = ""
+        timeRemaining = 0
+        selectedHour = 0
+        selectedMinute = 25
+        selectedSecond = 0
     }
 }
 
@@ -629,22 +653,22 @@ struct FocusRecordView: View {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(record.taskName)
                                         .font(.system(size: 20, weight: .bold))
-                                        .foregroundColor(.white)
+                                        .foregroundColor(record.isCompleted ? .white : .black)
                                     Text("時長：\(formatDuration(record.duration))")
                                         .font(.subheadline)
-                                        .foregroundColor(.white.opacity(0.85))
+                                        .foregroundColor(record.isCompleted ? .white.opacity(0.85) : .black.opacity(0.85))
                                     Text("日期：\(record.date)")
                                         .font(.subheadline)
-                                        .foregroundColor(.white.opacity(0.85))
+                                        .foregroundColor(record.isCompleted ? .white.opacity(0.85) : .black.opacity(0.85))
                                 }
                                 Spacer()
-                                Image(systemName: record.isCompleted ? "checkmark" : "xmark")
+                                Image(systemName: record.isCompleted ? "checkmark.circle" : "xmark.circle")
                                     .font(.system(size: 28, weight: .bold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(record.isCompleted ? .white : .black)
                             }
                             .padding(.horizontal, 18)
                             .padding(.vertical, 16)
-                            .background(record.isCompleted ? Color.green : Color(hex: "#cc5a33"))
+                            .background(record.isCompleted ? Color(hex: "#558859") : Color(hex: "#c3c3c3"))
                             .cornerRadius(20)
                         }
                     }
