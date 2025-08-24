@@ -9,11 +9,14 @@ enum AnimationType {
 struct AnimatedCatModifier: ViewModifier {
     let isRunning: Bool
     @State private var animationState = false
-    
+
     func body(content: Content) -> some View {
         content
-            .scaleEffect(isRunning && animationState ? 1.05 : 1.0)
-            .animation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true), value: animationState)
+            .scaleEffect(isRunning && animationState ? 1.10 : 0.95)
+            .animation(
+                isRunning ? .easeInOut(duration: 1.2).repeatForever(autoreverses: true) : .default,
+                value: animationState
+            )
             .onAppear {
                 if isRunning {
                     animationState = true
@@ -24,7 +27,6 @@ struct AnimatedCatModifier: ViewModifier {
             }
     }
 }
-
 struct ContentView: View {
     @State private var isRunning = false
     @State private var isShowingTaskSheet = false
